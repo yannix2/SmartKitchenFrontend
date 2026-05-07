@@ -18,6 +18,9 @@ const PROTECTED_PREFIXES = [
   "/orders",
   "/refunds",
   "/profile",
+  "/billing",
+  "/onboarding",
+  "/crm",
   "/admin",
 ];
 

@@ -14,9 +14,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/provider";
 import type { UserProfile } from "@/types";
 
 export default function ProfilePage() {
+  const t = useT({
+    fr: {
+      title: "Mon profil", photo: "Photo de profil", change_photo: "Changer la photo", uploading: "Téléversement…", photo_help: "JPEG, PNG ou WebP · max 5 Mo",
+      personal: "Informations personnelles", first_name: "Prénom", last_name: "Nom", email: "Email", email_locked: "L'email ne peut pas être modifié.",
+      phone_code: "Indicatif", phone_num: "Téléphone", address: "Adresse", street: "Rue", city: "Ville", gouv: "Gouvernorat", zip: "Code postal",
+      active: "Actif", inactive: "Inactif", verified: "Vérifié", saving: "Enregistrement…", save: "Enregistrer", profile_updated: "Profil mis à jour avec succès.",
+      save_failed: "Échec de l'enregistrement du profil.", avatar_updated: "Avatar mis à jour.", avatar_failed: "Échec du téléversement de l'avatar.",
+    },
+    en: {
+      title: "My Profile", photo: "Profile Photo", change_photo: "Change Photo", uploading: "Uploading…", photo_help: "JPEG, PNG or WebP · max 5 MB",
+      personal: "Personal Information", first_name: "First Name", last_name: "Last Name", email: "Email", email_locked: "Email cannot be changed.",
+      phone_code: "Phone Code", phone_num: "Phone Number", address: "Address", street: "Street", city: "City", gouv: "Gouvernorat", zip: "Zip Code",
+      active: "Active", inactive: "Inactive", verified: "Verified", saving: "Saving…", save: "Save Changes", profile_updated: "Profile updated successfully.",
+      save_failed: "Failed to save profile.", avatar_updated: "Avatar updated.", avatar_failed: "Avatar upload failed.",
+    },
+  });
   const [profile, setProfile]   = useState<UserProfile | null>(null);
   const [loading, setLoading]   = useState(true);
   const [saving, setSaving]     = useState(false);
@@ -67,10 +84,10 @@ export default function ProfilePage() {
       }
       const updated = await api.patch<UserProfile>("/profile", body);
       setProfile(updated);
-      setSaveMsg({ ok: true, text: "Profile updated successfully." });
+      setSaveMsg({ ok: true, text: t.profile_updated });
     } catch (err: unknown) {
       const e = err as { detail?: string };
-      setSaveMsg({ ok: false, text: e.detail ?? "Failed to save profile." });
+      setSaveMsg({ ok: false, text: e.detail ?? t.save_failed });
     } finally {
       setSaving(false);
       setTimeout(() => setSaveMsg(null), 4000);
@@ -86,10 +103,10 @@ export default function ProfilePage() {
       form.append("file", file);
       const res = await api.post<{ avatar_url: string }>("/profile/avatar", form);
       setProfile((prev) => prev ? { ...prev, avatar_url: res.avatar_url } : prev);
-      setSaveMsg({ ok: true, text: "Avatar updated." });
+      setSaveMsg({ ok: true, text: t.avatar_updated });
     } catch (err: unknown) {
       const e = err as { detail?: string };
-      setSaveMsg({ ok: false, text: e.detail ?? "Avatar upload failed." });
+      setSaveMsg({ ok: false, text: e.detail ?? t.avatar_failed });
     } finally {
       setUploading(false);
       setTimeout(() => setSaveMsg(null), 3000);
@@ -118,14 +135,14 @@ export default function ProfilePage() {
           <User className="w-4.5 h-4.5 text-primary" style={{ width: "18px", height: "18px" }} />
         </div>
         <div>
-          <h1 className="text-2xl font-black tracking-tight">My Profile</h1>
+          <h1 className="text-2xl font-black tracking-tight">{t.title}</h1>
           <p className="text-xs text-muted-foreground">{profile?.email}</p>
         </div>
       </div>
 
       {/* Avatar */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <h2 className="font-bold text-sm">Profile Photo</h2>
+        <h2 className="font-bold text-sm">{t.photo}</h2>
         <div className="flex items-center gap-5">
           <div className="relative shrink-0">
             {profile?.avatar_url ? (
@@ -162,9 +179,9 @@ export default function ProfilePage() {
               className="gap-1.5"
             >
               <Camera className="w-3.5 h-3.5" />
-              {uploading ? "Uploading…" : "Change Photo"}
+              {uploading ? t.uploading : t.change_photo}
             </Button>
-            <p className="text-[10px] text-muted-foreground">JPEG, PNG or WebP · max 5 MB</p>
+            <p className="text-[10px] text-muted-foreground">{t.photo_help}</p>
           </div>
         </div>
       </div>
@@ -187,53 +204,53 @@ export default function ProfilePage() {
 
       {/* Profile form */}
       <form onSubmit={save} className="rounded-2xl border border-border bg-card p-5 space-y-5">
-        <h2 className="font-bold text-sm">Personal Information</h2>
+        <h2 className="font-bold text-sm">{t.personal}</h2>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="name" className="text-xs">First Name</Label>
+            <Label htmlFor="name" className="text-xs">{t.first_name}</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Yassine" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="family" className="text-xs">Last Name</Label>
+            <Label htmlFor="family" className="text-xs">{t.last_name}</Label>
             <Input id="family" value={familyName} onChange={(e) => setFamily(e.target.value)} placeholder="Ben Ali" />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs">Email</Label>
+          <Label className="text-xs">{t.email}</Label>
           <Input value={profile?.email ?? ""} disabled className="opacity-60" />
-          <p className="text-[10px] text-muted-foreground">Email cannot be changed.</p>
+          <p className="text-[10px] text-muted-foreground">{t.email_locked}</p>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="phone-code" className="text-xs">Phone Code</Label>
+            <Label htmlFor="phone-code" className="text-xs">{t.phone_code}</Label>
             <Input id="phone-code" value={phoneCode} onChange={(e) => setPhoneCode(e.target.value)} placeholder="+216" className="font-mono" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="phone" className="text-xs">Phone Number</Label>
+            <Label htmlFor="phone" className="text-xs">{t.phone_num}</Label>
             <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="55123456" className="font-mono" />
           </div>
         </div>
 
         <div className="space-y-3">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Address</h3>
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t.address}</h3>
           <div className="space-y-1.5">
-            <Label htmlFor="rue" className="text-xs">Street</Label>
+            <Label htmlFor="rue" className="text-xs">{t.street}</Label>
             <Input id="rue" value={rue} onChange={(e) => setRue(e.target.value)} placeholder="Rue de la paix" />
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="city" className="text-xs">City</Label>
+              <Label htmlFor="city" className="text-xs">{t.city}</Label>
               <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Tunis" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="gouv" className="text-xs">Gouvernorat</Label>
+              <Label htmlFor="gouv" className="text-xs">{t.gouv}</Label>
               <Input id="gouv" value={gouv} onChange={(e) => setGouv(e.target.value)} placeholder="Tunis" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="zip" className="text-xs">Zip Code</Label>
+              <Label htmlFor="zip" className="text-xs">{t.zip}</Label>
               <Input id="zip" value={zip} onChange={(e) => setZip(e.target.value)} placeholder="1000" className="font-mono" />
             </div>
           </div>
@@ -255,18 +272,18 @@ export default function ProfilePage() {
               ? "border-primary/40 text-primary bg-primary/5"
               : "border-destructive/40 text-destructive bg-destructive/5"
           )}>
-            {profile?.is_active ? "Active" : "Inactive"}
+            {profile?.is_active ? t.active : t.inactive}
           </span>
           {profile?.is_verified && (
             <span className="text-[10px] font-semibold px-2 py-1 rounded-full border border-primary/40 text-primary bg-primary/5">
-              Verified
+              {t.verified}
             </span>
           )}
         </div>
 
-        <Button type="submit" disabled={saving} className="w-full sm:w-auto gap-1.5">
+        <Button type="submit" disabled={saving} className="w-full sm:w-auto gap-1.5 press-scale">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {saving ? "Saving…" : "Save Changes"}
+          {saving ? t.saving : t.save}
         </Button>
       </form>
     </div>

@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/provider";
 import type { UserStore, StoreAddResult } from "@/types";
 
 const STATUS_VERIFIED = "verified";
@@ -54,6 +55,46 @@ function CopyButton({ text }: { text: string }) {
 
 function IntegrationGuide() {
   const [open, setOpen] = useState(false);
+  const t = useT({
+    fr: {
+      title: "Comment intégrer votre restaurant avec SmartKitchen",
+      lead_a: "Pour permettre à SmartKitchen de gérer vos commandes et rapports, vous devez nous ajouter en tant que",
+      manager: "Gérant",
+      lead_b: "sur votre restaurant Uber Eats. Suivez ces étapes :",
+      s1_t: "Ouvrir Uber Eats Manager",
+      s1_d: "Allez sur manager.uber.com et connectez-vous avec votre compte restaurant.",
+      s2_t: "Sélectionner votre restaurant",
+      s2_d: "Depuis la barre du haut, choisissez le restaurant à intégrer.",
+      s3_t: "Aller dans Utilisateurs & Permissions",
+      s3_d: "Naviguez vers Paramètres → Utilisateurs & Permissions (ou « Membres de l'équipe »).",
+      s4_t: "Ajouter SmartKitchen comme Gérant",
+      s4_d_a: "Cliquez sur",
+      s4_d_invite: "Inviter un utilisateur",
+      s4_d_b: ", entrez l'email SmartKitchen et définissez le rôle sur",
+      s4_d_role: "Gérant",
+      s5_t: "Attendre la vérification",
+      s5_d: "Une fois accepté, votre statut passera automatiquement de En attente à Vérifié.",
+    },
+    en: {
+      title: "How to integrate your store with SmartKitchen",
+      lead_a: "To allow SmartKitchen to manage your orders and reports, you need to add us as a",
+      manager: "Manager",
+      lead_b: "on your Uber Eats store. Follow these steps:",
+      s1_t: "Open Uber Eats Manager",
+      s1_d: "Go to manager.uber.com and sign in with your restaurant account.",
+      s2_t: "Select your store",
+      s2_d: "From the top navigation, choose the store you want to integrate.",
+      s3_t: "Go to Users & Permissions",
+      s3_d: 'Navigate to Settings → Users & Permissions (or "Team Members").',
+      s4_t: "Add SmartKitchen as Manager",
+      s4_d_a: "Click",
+      s4_d_invite: "Invite User",
+      s4_d_b: ", enter the SmartKitchen email address, and set the role to",
+      s4_d_role: "Manager",
+      s5_t: "Wait for verification",
+      s5_d: "Once accepted, your store status will automatically switch from Pending to Verified.",
+    },
+  });
   return (
     <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 overflow-hidden">
       <button
@@ -62,9 +103,7 @@ function IntegrationGuide() {
       >
         <div className="flex items-center gap-2">
           <Info className="w-4 h-4 text-amber-500 shrink-0" />
-          <span className="font-semibold text-sm text-amber-700 dark:text-amber-400">
-            How to integrate your store with SmartKitchen
-          </span>
+          <span className="font-semibold text-sm text-amber-700 dark:text-amber-400">{t.title}</span>
         </div>
         {open
           ? <ChevronUp className="w-4 h-4 text-amber-500 shrink-0" />
@@ -75,41 +114,23 @@ function IntegrationGuide() {
       {open && (
         <div className="px-5 pb-5 space-y-4 border-t border-amber-500/20">
           <p className="text-sm text-muted-foreground pt-3">
-            To allow SmartKitchen to manage your orders and reports, you need to add us as a{" "}
-            <strong>Manager</strong> on your Uber Eats store. Follow these steps:
+            {t.lead_a} <strong>{t.manager}</strong> {t.lead_b}
           </p>
           <ol className="space-y-3">
             {[
-              {
-                step: "1",
-                title: "Open Uber Eats Manager",
-                desc: "Go to manager.uber.com and sign in with your restaurant account.",
-              },
-              {
-                step: "2",
-                title: "Select your store",
-                desc: "From the top navigation, choose the store you want to integrate.",
-              },
-              {
-                step: "3",
-                title: "Go to Users & Permissions",
-                desc: 'Navigate to Settings → Users & Permissions (or "Team Members").',
-              },
+              { step: "1", title: t.s1_t, desc: t.s1_d as React.ReactNode },
+              { step: "2", title: t.s2_t, desc: t.s2_d as React.ReactNode },
+              { step: "3", title: t.s3_t, desc: t.s3_d as React.ReactNode },
               {
                 step: "4",
-                title: "Add SmartKitchen as Manager",
+                title: t.s4_t,
                 desc: (
                   <>
-                    Click <strong>Invite User</strong>, enter the SmartKitchen email address, and set the role to{" "}
-                    <strong>Manager</strong>.
+                    {t.s4_d_a} <strong>{t.s4_d_invite}</strong>{t.s4_d_b} <strong>{t.s4_d_role}</strong>.
                   </>
                 ),
               },
-              {
-                step: "5",
-                title: "Wait for verification",
-                desc: "Once accepted, your store status will automatically switch from Pending to Verified.",
-              },
+              { step: "5", title: t.s5_t, desc: t.s5_d as React.ReactNode },
             ].map((item) => (
               <li key={item.step} className="flex gap-3">
                 <span className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
@@ -136,10 +157,34 @@ function CsvDropZone({ onImport }: { onImport: (results: ImportResult[]) => void
   const [error, setError]         = useState("");
   const [results, setResults]     = useState<ImportResult[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = useT({
+    fr: {
+      need_csv: "Veuillez téléverser un fichier .csv.",
+      import_failed: "Échec de l'import.",
+      importing: "Import en cours…",
+      drop_here: "Déposez votre CSV Uber Eats ici",
+      processing: "Traitement de vos restaurants",
+      or_click: "ou cliquez pour parcourir — colonnes requises : Shop UUID, Name",
+      already_linked: "déjà lié",
+      verified: "Vérifié",
+      pending: "En attente",
+    },
+    en: {
+      need_csv: "Please upload a .csv file.",
+      import_failed: "Import failed.",
+      importing: "Importing…",
+      drop_here: "Drop your Uber Eats CSV here",
+      processing: "Processing your stores",
+      or_click: "or click to browse — requires Shop UUID, Name columns",
+      already_linked: "already linked",
+      verified: "Verified",
+      pending: "Pending",
+    },
+  });
 
   async function processFile(file: File) {
     if (!file.name.endsWith(".csv")) {
-      setError("Please upload a .csv file.");
+      setError(t.need_csv);
       return;
     }
     setImporting(true);
@@ -155,7 +200,7 @@ function CsvDropZone({ onImport }: { onImport: (results: ImportResult[]) => void
       setResults(d.results ?? []);
       onImport(d.results ?? []);
     } catch (err: unknown) {
-      setError((err as { detail?: string }).detail ?? "Import failed.");
+      setError((err as { detail?: string }).detail ?? t.import_failed);
     } finally {
       setImporting(false);
     }
@@ -196,10 +241,10 @@ function CsvDropZone({ onImport }: { onImport: (results: ImportResult[]) => void
         )}
         <div className="text-center">
           <p className="text-sm font-semibold">
-            {importing ? "Importing…" : "Drop your Uber Eats CSV here"}
+            {importing ? t.importing : t.drop_here}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {importing ? "Processing your stores" : "or click to browse — requires Shop UUID, Name columns"}
+            {importing ? t.processing : t.or_click}
           </p>
         </div>
       </div>
@@ -220,7 +265,7 @@ function CsvDropZone({ onImport }: { onImport: (results: ImportResult[]) => void
               }
               <span className="font-medium truncate flex-1">{r.store_name || r.store_id}</span>
               {r.action === "already_exists" && (
-                <span className="text-muted-foreground shrink-0">already linked</span>
+                <span className="text-muted-foreground shrink-0">{t.already_linked}</span>
               )}
               <Badge variant="outline" className={cn(
                 "text-[10px] px-1.5 py-0 shrink-0",
@@ -228,7 +273,7 @@ function CsvDropZone({ onImport }: { onImport: (results: ImportResult[]) => void
                   ? "border-primary/40 text-primary bg-primary/5"
                   : "border-amber-500/40 text-amber-600 bg-amber-500/5"
               )}>
-                {r.status === STATUS_VERIFIED ? "Verified" : "Pending"}
+                {r.status === STATUS_VERIFIED ? t.verified : t.pending}
               </Badge>
             </div>
           ))}
@@ -241,6 +286,42 @@ function CsvDropZone({ onImport }: { onImport: (results: ImportResult[]) => void
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function StoresPage() {
+  const t = useT({
+    fr: {
+      title: "Mes restaurants",
+      lead: "Importez vos restaurants Uber Eats pour suivre les commandes et remboursements.",
+      tab_csv: "Importer depuis CSV",
+      tab_manual: "Saisir manuellement",
+      paste_ph: "Collez un ou plusieurs UUID de restaurants Uber Eats, séparés par virgules, espaces ou retours à la ligne…",
+      add_stores: "Ajouter le(s) restaurant(s)",
+      add_failed: "Échec de l'ajout du/des restaurant(s).",
+      verified: "Vérifié",
+      pending: "En attente",
+      loading: "Chargement…",
+      stores_count_one: "restaurant",
+      stores_count_many: "restaurants",
+      no_stores: "Aucun restaurant ajouté",
+      no_stores_lead: "Importez votre CSV Uber Eats ci-dessus pour commencer",
+      remove_store: "Retirer le restaurant",
+    },
+    en: {
+      title: "My Stores",
+      lead: "Import your Uber Eats stores to start tracking orders and refunds.",
+      tab_csv: "Import from CSV",
+      tab_manual: "Enter manually",
+      paste_ph: "Paste one or more Uber Eats store UUIDs, separated by commas, spaces, or new lines…",
+      add_stores: "Add Store(s)",
+      add_failed: "Failed to add store(s).",
+      verified: "Verified",
+      pending: "Pending",
+      loading: "Loading…",
+      stores_count_one: "store",
+      stores_count_many: "stores",
+      no_stores: "No stores added yet",
+      no_stores_lead: "Import your Uber Eats CSV above to get started",
+      remove_store: "Remove store",
+    },
+  });
   const [stores, setStores]         = useState<UserStore[]>([]);
   const [loading, setLoading]       = useState(true);
   const [addIds, setAddIds]         = useState("");
@@ -281,7 +362,7 @@ export default function StoresPage() {
       fetchStores();
     } catch (err: unknown) {
       const e = err as { detail?: string };
-      setAddError(e.detail ?? "Failed to add store(s).");
+      setAddError(e.detail ?? t.add_failed);
     } finally {
       setAdding(false);
     }
@@ -310,11 +391,9 @@ export default function StoresPage() {
           <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
             <Store className="w-4.5 h-4.5 text-primary" style={{ width: "18px", height: "18px" }} />
           </div>
-          <h1 className="text-2xl font-black tracking-tight">My Stores</h1>
+          <h1 className="text-2xl font-black tracking-tight">{t.title}</h1>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Import your Uber Eats stores to start tracking orders and refunds.
-        </p>
+        <p className="text-sm text-muted-foreground">{t.lead}</p>
       </div>
 
       {/* Integration guide — shown when there are pending stores */}
@@ -323,17 +402,17 @@ export default function StoresPage() {
       {/* Add store card */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <div className="flex items-center gap-1 border-b border-border pb-3">
-          {(["csv", "manual"] as const).map((t) => (
+          {(["csv", "manual"] as const).map((mode) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={mode}
+              onClick={() => setTab(mode)}
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                tab === t ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                tab === mode ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}
             >
-              {t === "csv" ? <FileSpreadsheet className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5" />}
-              {t === "csv" ? "Import from CSV" : "Enter manually"}
+              {mode === "csv" ? <FileSpreadsheet className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5" />}
+              {mode === "csv" ? t.tab_csv : t.tab_manual}
             </button>
           ))}
         </div>
@@ -343,7 +422,7 @@ export default function StoresPage() {
         ) : (
           <form onSubmit={addStore} className="space-y-3">
             <textarea
-              placeholder="Paste one or more Uber Eats store UUIDs, separated by commas, spaces, or new lines…"
+              placeholder={t.paste_ph}
               value={addIds}
               onChange={(e) => { setAddIds(e.target.value); setAddError(""); setAddResults([]); }}
               className="w-full h-24 resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
@@ -351,7 +430,7 @@ export default function StoresPage() {
             />
             <Button type="submit" disabled={adding || !addIds.trim()} className="gap-1.5 w-full sm:w-auto">
               {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              Add Store(s)
+              {t.add_stores}
             </Button>
 
             {addError && (
@@ -375,7 +454,7 @@ export default function StoresPage() {
                         ? "border-primary/40 text-primary bg-primary/5"
                         : "border-amber-500/40 text-amber-600 bg-amber-500/5"
                     )}>
-                      {r.status === STATUS_VERIFIED ? "Verified" : "Pending"}
+                      {r.status === STATUS_VERIFIED ? t.verified : t.pending}
                     </Badge>
                   </div>
                 ))}
@@ -388,7 +467,7 @@ export default function StoresPage() {
       {/* Stores list */}
       <div className="space-y-3">
         <h2 className="font-bold text-sm">
-          {loading ? "Loading…" : `${stores.length} store${stores.length !== 1 ? "s" : ""}`}
+          {loading ? t.loading : `${stores.length} ${stores.length !== 1 ? t.stores_count_many : t.stores_count_one}`}
         </h2>
 
         {loading ? (
@@ -398,8 +477,8 @@ export default function StoresPage() {
         ) : stores.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border flex flex-col items-center gap-3 py-12">
             <PackageOpen className="w-10 h-10 text-muted-foreground/30" />
-            <p className="text-sm text-muted-foreground">No stores added yet</p>
-            <p className="text-xs text-muted-foreground/60">Import your Uber Eats CSV above to get started</p>
+            <p className="text-sm text-muted-foreground">{t.no_stores}</p>
+            <p className="text-xs text-muted-foreground/60">{t.no_stores_lead}</p>
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -425,7 +504,7 @@ export default function StoresPage() {
                           ? "border-primary/40 text-primary bg-primary/5"
                           : "border-amber-500/40 text-amber-600 bg-amber-500/5"
                       )}>
-                        {verified ? "Verified" : "Pending"}
+                        {verified ? t.verified : t.pending}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-1 mt-0.5">
@@ -440,7 +519,7 @@ export default function StoresPage() {
                       "w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground transition-colors",
                       "hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100"
                     )}
-                    title="Remove store"
+                    title={t.remove_store}
                   >
                     {removingId === s.store_id
                       ? <Loader2 className="w-3.5 h-3.5 animate-spin" />

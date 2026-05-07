@@ -4,20 +4,28 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/ui/language-toggle";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import Logo from "@/components/ui/Logo";
-
-const NAV_LINKS = [
-  { label: "Features",     href: "#features" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Pricing",      href: "#pricing" },
-];
+import { useT } from "@/i18n/provider";
 
 export function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+
+  const t = useT({
+    fr: { features: "Fonctionnalités", how: "Comment ça marche", pricing: "Tarifs", about: "À propos", contact: "Contact", login: "Se connecter", get_started: "Commencer", get_started_free: "Commencer gratuitement" },
+    en: { features: "Features", how: "How It Works", pricing: "Pricing", about: "About", contact: "Contact", login: "Log in", get_started: "Get Started", get_started_free: "Get Started Free" },
+  });
+  const NAV_LINKS = [
+    { label: t.features, href: "#features"     },
+    { label: t.how,      href: "#how-it-works" },
+    { label: t.pricing,  href: "/pricing"      },
+    { label: t.about,    href: "/about"        },
+    { label: t.contact,  href: "/contact"      },
+  ];
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 24);
@@ -30,13 +38,13 @@ export function LandingNav() {
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-all duration-500",
         scrolled
-          ? "bg-background/80 backdrop-blur-xl border-b border-border shadow-sm"
+          ? "bg-linear-to-r from-primary/8 via-card/85 to-card/85 backdrop-blur-xl border-b border-border/60 shadow-[0_8px_24px_-12px] shadow-primary/10"
           : "bg-transparent"
       )}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
+        <Link href="/" className="flex items-center gap-2 group shrink-0">
           <Logo
             width={36}
             height={36}
@@ -48,12 +56,12 @@ export function LandingNav() {
         </Link>
 
         {/* Desktop links */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
           {NAV_LINKS.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
             >
               {l.label}
             </Link>
@@ -61,25 +69,21 @@ export function LandingNav() {
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
+          <LanguageToggle variant="compact" />
           <ThemeToggle />
-          <Link href="/login" className="hidden md:block">
-            <Button variant="ghost" size="sm" className="font-medium">
-              Log in
-            </Button>
+          <Link href="/login" className="hidden lg:block">
+            <Button variant="ghost" size="sm" className="font-medium">{t.login}</Button>
           </Link>
-          <Link href="/register" className="hidden md:block">
-            <Button
-              size="sm"
-              className="font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/45 hover:-translate-y-px transition-all"
-            >
-              Get Started
+          <Link href="/register" className="hidden lg:block">
+            <Button size="sm" className="font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/45 hover:-translate-y-px transition-all">
+              {t.get_started}
             </Button>
           </Link>
 
           {/* Mobile hamburger */}
           <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger className="md:hidden inline-flex items-center justify-center rounded-md h-9 w-9 hover:bg-accent hover:text-accent-foreground transition-colors">
+            <SheetTrigger className="lg:hidden inline-flex items-center justify-center rounded-md h-9 w-9 hover:bg-accent hover:text-accent-foreground transition-colors">
               <Menu className="h-5 w-5" />
             </SheetTrigger>
             <SheetContent side="right" className="w-72 flex flex-col gap-0 pt-10">
@@ -102,11 +106,12 @@ export function LandingNav() {
                 ))}
               </nav>
               <div className="mt-auto flex flex-col gap-3 pt-6 border-t border-border">
+                <div className="flex justify-center"><LanguageToggle /></div>
                 <Link href="/login" onClick={() => setOpen(false)}>
-                  <Button variant="outline" className="w-full font-semibold">Log in</Button>
+                  <Button variant="outline" className="w-full font-semibold">{t.login}</Button>
                 </Link>
                 <Link href="/register" onClick={() => setOpen(false)}>
-                  <Button className="w-full font-semibold">Get Started Free</Button>
+                  <Button className="w-full font-semibold">{t.get_started_free}</Button>
                 </Link>
               </div>
             </SheetContent>

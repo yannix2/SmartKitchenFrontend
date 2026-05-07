@@ -15,11 +15,12 @@ import {
   Mail,
   UserX,
   UserCheck,
+  KeyRound,
+  Save,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
-import { AdminNav } from "@/components/layout/admin-nav";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
 
@@ -70,8 +71,8 @@ function Avatar({ user }: { user: UserDetail }) {
 function RoleBadge({ role }: { role: UserRole }) {
   if (role === "admin")
     return <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-xs gap-1"><ShieldCheck className="w-3 h-3" />Admin</Badge>;
-  if (role === "manager")
-    return <Badge variant="outline" className="border-sky-400/40 text-sky-500 bg-sky-500/5 text-xs">Manager</Badge>;
+  if (role === "agent")
+    return <Badge variant="outline" className="border-sky-400/40 text-sky-500 bg-sky-500/5 text-xs">Agent</Badge>;
   return <Badge variant="outline" className="text-xs text-muted-foreground">User</Badge>;
 }
 
@@ -88,6 +89,11 @@ export default function UserDetailPage() {
   const [loading, setLoading] = useState(true);
   const [actioning, setActioning] = useState(false);
   const [msg, setMsg]         = useState<{ ok: boolean; text: string } | null>(null);
+
+  // Support actions
+  const [newPassword, setNewPassword]   = useState("");
+  const [pwSaving, setPwSaving]         = useState(false);
+  const [subSaving, setSubSaving]       = useState(false);
 
   useEffect(() => {
     api.get<UserDetail>(`/auth/admin/users/${userId}`)
@@ -118,11 +124,54 @@ export default function UserDetailPage() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
+  async function setPassword() {
+    if (newPassword.length < 8) {
+      flash(false, "Password must be at least 8 characters.");
+      return;
+    }
+    setPwSaving(true);
+    try {
+      await api.post(`/auth/admin/users/${userId}/set-password`, { new_password: newPassword });
+      setNewPassword("");
+      flash(true, "Password updated. Share it with the user securely.");
+    } catch (err: unknown) {
+      flash(false, (err as { detail?: string }).detail ?? "Password update failed.");
+    } finally {
+      setPwSaving(false);
+    }
+  }
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+  async function activateSubscription() {
+    if (!user) return;
+    setSubSaving(true);
+    try {
+      const r = await api.post<{ message: string }>(`/billing/admin/activate/${userId}`);
+      setUser((u) => u ? { ...u, abonnement_id: u.abonnement_id ?? "active" } : u);
+      flash(true, r?.message ?? "Subscription activated.");
+    } catch (err: unknown) {
+      flash(false, (err as { detail?: string }).detail ?? "Subscription activation failed.");
+    } finally {
+      setSubSaving(false);
+    }
+  }
+
+  async function deactivateSubscription() {
+    if (!user) return;
+    if (!window.confirm("Cancel this user's subscription?")) return;
+    setSubSaving(true);
+    try {
+      await api.post(`/billing/admin/deactivate/${userId}`);
+      setUser((u) => u ? { ...u, abonnement_id: null } : u);
+      flash(true, "Subscription cancelled.");
+    } catch (err: unknown) {
+      flash(false, (err as { detail?: string }).detail ?? "Subscription cancellation failed.");
+    } finally {
+      setSubSaving(false);
+    }
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
         <button
           onClick={() => router.back()}
@@ -206,9 +255,34 @@ export default function UserDetailPage() {
 
             {/* Abonnement */}
             <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-violet-500" />
-                <h2 className="font-bold text-sm">Abonnement</h2>
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-violet-500" />
+                  <h2 className="font-bold text-sm">Abonnement</h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  {user.abonnement_id ? (
+                    <Button
+                      size="sm" variant="outline"
+                      onClick={deactivateSubscription}
+                      disabled={subSaving}
+                      className="text-xs gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5"
+                    >
+                      {subSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserX className="w-3 h-3" />}
+                      Deactivate subscription
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm" variant="outline"
+                      onClick={activateSubscription}
+                      disabled={subSaving}
+                      className="text-xs gap-1.5 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
+                    >
+                      {subSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserCheck className="w-3 h-3" />}
+                      Activate subscription
+                    </Button>
+                  )}
+                </div>
               </div>
               {user.abonnement_id ? (
                 <div className="flex items-center gap-3">
@@ -220,6 +294,35 @@ export default function UserDetailPage() {
               ) : (
                 <p className="text-sm text-muted-foreground">No active subscription.</p>
               )}
+            </div>
+
+            {/* Reset password — support action */}
+            <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-amber-500" />
+                <h2 className="font-bold text-sm">Set new password</h2>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Use this when a user can't reset their password themselves. Share the new password with them via a secure channel.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="New password (min. 8 chars)"
+                  className="flex-1 h-9 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
+                />
+                <Button
+                  size="sm"
+                  onClick={setPassword}
+                  disabled={pwSaving || newPassword.length < 8}
+                  className="gap-1.5"
+                >
+                  {pwSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  Update password
+                </Button>
+              </div>
             </div>
 
             {/* Stores */}
@@ -253,7 +356,6 @@ export default function UserDetailPage() {
             </div>
           </>
         )}
-      </div>
     </div>
   );
 }

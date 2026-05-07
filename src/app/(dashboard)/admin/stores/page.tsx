@@ -14,14 +14,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
-import { AdminNav } from "@/components/layout/admin-nav";
+import { useT } from "@/i18n/provider";
 
 // API returns [{store_id, store_name}]
 interface AdminStore { store_id: string; store_name: string }
 
 const LIMIT = 50;
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text, title }: { text: string; title: string }) {
   const [copied, setCopied] = useState(false);
   function copy() {
     navigator.clipboard.writeText(text);
@@ -29,13 +29,37 @@ function CopyButton({ text }: { text: string }) {
     setTimeout(() => setCopied(false), 1500);
   }
   return (
-    <button onClick={copy} className="ml-1 text-muted-foreground hover:text-foreground transition-colors" title="Copy store ID">
+    <button onClick={copy} className="ml-1 text-muted-foreground hover:text-foreground transition-colors" title={title}>
       {copied ? <CheckCheck className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
     </button>
   );
 }
 
 export default function AdminStoresPage() {
+  const t = useT({
+    fr: {
+      title: "Restaurants", refresh: "Actualiser", loading: "Chargement…",
+      total_one: "restaurant", total_many: "restaurants", suffix_total: "au total", suffix_match: "correspondant(s)",
+      search: "Rechercher par nom ou ID restaurant…",
+      th_name: "Nom du restaurant", th_id: "ID restaurant",
+      loading_stores: "Chargement des restaurants…",
+      no_match: "Aucun restaurant ne correspond.",
+      no_stores: "Aucun restaurant. Lancez une synchronisation.",
+      page: "Page", of: "sur", prev: "Préc.", next: "Suiv.", word: "restaurants",
+      copy_id: "Copier l'ID restaurant",
+    },
+    en: {
+      title: "Stores", refresh: "Refresh", loading: "Loading…",
+      total_one: "store", total_many: "stores", suffix_total: "total", suffix_match: "matching",
+      search: "Search by name or store ID…",
+      th_name: "Store Name", th_id: "Store ID",
+      loading_stores: "Loading stores…",
+      no_match: "No stores match your search.",
+      no_stores: "No stores found. Run a sync first.",
+      page: "Page", of: "of", prev: "Prev", next: "Next", word: "stores",
+      copy_id: "Copy store ID",
+    },
+  });
   const [allStores, setAllStores] = useState<AdminStore[]>([]);
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState("");
@@ -69,10 +93,7 @@ export default function AdminStoresPage() {
   function applySearch(v: string) { setSearch(v); setPage(0); }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-400 mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -81,15 +102,15 @@ export default function AdminStoresPage() {
               <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Store className="w-4 h-4 text-primary" />
               </div>
-              <h1 className="text-2xl font-black tracking-tight">Stores</h1>
+              <h1 className="text-2xl font-black tracking-tight">{t.title}</h1>
             </div>
             <p className="text-sm text-muted-foreground">
-              {loading ? "Loading…" : `${filtered.length.toLocaleString()} store${filtered.length !== 1 ? "s" : ""}${search ? " matching" : " total"}`}
+              {loading ? t.loading : `${filtered.length.toLocaleString()} ${filtered.length !== 1 ? t.total_many : t.total_one} ${search ? t.suffix_match : t.suffix_total}`}
             </p>
           </div>
           <Button size="sm" variant="outline" onClick={fetchStores} disabled={loading} className="gap-1.5">
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCcw className="w-3.5 h-3.5" />}
-            Refresh
+            {t.refresh}
           </Button>
         </div>
 
@@ -97,7 +118,7 @@ export default function AdminStoresPage() {
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <Input
-            placeholder="Search by name or store ID…"
+            placeholder={t.search}
             className="pl-9"
             value={search}
             onChange={(e) => applySearch(e.target.value)}
@@ -111,21 +132,21 @@ export default function AdminStoresPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/40">
                   <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">#</th>
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">Store Name</th>
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">Store ID</th>
+                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">{t.th_name}</th>
+                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">{t.th_id}</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
                     <td colSpan={3} className="px-4 py-16 text-center text-muted-foreground">
-                      <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Loading stores…
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />{t.loading_stores}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="px-4 py-16 text-center text-muted-foreground">
-                      {search ? "No stores match your search." : "No stores found. Run a sync first."}
+                      {search ? t.no_match : t.no_stores}
                     </td>
                   </tr>
                 ) : paged.map((s, i) => (
@@ -142,7 +163,7 @@ export default function AdminStoresPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-0.5">
                         <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{s.store_id}</code>
-                        <CopyButton text={s.store_id} />
+                        <CopyButton text={s.store_id} title={t.copy_id} />
                       </div>
                     </td>
                   </tr>
@@ -155,19 +176,18 @@ export default function AdminStoresPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              Page {page + 1} of {totalPages} — {filtered.length} stores
+              {t.page} {page + 1} {t.of} {totalPages} — {filtered.length} {t.word}
             </p>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)} className="gap-1">
-                <ChevronLeft className="w-3.5 h-3.5" /> Prev
+                <ChevronLeft className="w-3.5 h-3.5" /> {t.prev}
               </Button>
               <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)} className="gap-1">
-                Next <ChevronRight className="w-3.5 h-3.5" />
+                {t.next} <ChevronRight className="w-3.5 h-3.5" />
               </Button>
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

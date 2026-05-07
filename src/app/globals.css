@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-kodchasan), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-kodchasan), sans-serif;
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -145,6 +145,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-optical-sizing: auto;
+    font-variation-settings: "wdth" 100;
   }
   html {
     @apply font-sans;
@@ -182,10 +184,138 @@
 .animate-float-slow  { animation: float-slow 6s ease-in-out infinite; }
 .animate-fade-in-up  { animation: fade-in-up 0.6s ease-out both; }
 
+/* ── Polished UI animations ──────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 40%, transparent); }
+  50%      { box-shadow: 0 0 0 6px color-mix(in oklch, var(--primary) 0%, transparent); }
+}
+
+@keyframes shimmer-skeleton {
+  0%   { background-position: -300% 0; }
+  100% { background-position: 300% 0; }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-fade-in        { animation: fade-in 0.25s ease-out both; }
+.animate-scale-in       { animation: scale-in 0.2s ease-out both; }
+.animate-pulse-soft     { animation: pulse-soft 2s ease-in-out infinite; }
+.animate-slide-in-right { animation: slide-in-right 0.3s ease-out both; }
+.animate-toast-in       { animation: toast-in 0.2s ease-out both; }
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklch, var(--muted) 60%, transparent) 25%,
+    color-mix(in oklch, var(--muted-foreground) 8%, transparent) 50%,
+    color-mix(in oklch, var(--muted) 60%, transparent) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-skeleton 1.6s ease-in-out infinite;
+}
+
+/* Staggered children — direct children of [data-stagger] animate sequentially.
+   Uses opacity+translateY so it works on table rows (which can't transform).
+   Up to 16 children get a delay; the rest still animate without delay. */
+@keyframes fade-up-row {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+[data-stagger] > * { animation: fade-up-row 0.45s ease-out both; }
+[data-stagger] > *:nth-child(1)  { animation-delay:   0ms; }
+[data-stagger] > *:nth-child(2)  { animation-delay:  25ms; }
+[data-stagger] > *:nth-child(3)  { animation-delay:  50ms; }
+[data-stagger] > *:nth-child(4)  { animation-delay:  75ms; }
+[data-stagger] > *:nth-child(5)  { animation-delay: 100ms; }
+[data-stagger] > *:nth-child(6)  { animation-delay: 125ms; }
+[data-stagger] > *:nth-child(7)  { animation-delay: 150ms; }
+[data-stagger] > *:nth-child(8)  { animation-delay: 175ms; }
+[data-stagger] > *:nth-child(9)  { animation-delay: 200ms; }
+[data-stagger] > *:nth-child(10) { animation-delay: 225ms; }
+[data-stagger] > *:nth-child(11) { animation-delay: 250ms; }
+[data-stagger] > *:nth-child(12) { animation-delay: 275ms; }
+[data-stagger] > *:nth-child(13) { animation-delay: 300ms; }
+[data-stagger] > *:nth-child(14) { animation-delay: 325ms; }
+[data-stagger] > *:nth-child(15) { animation-delay: 350ms; }
+[data-stagger] > *:nth-child(16) { animation-delay: 375ms; }
+
+/* Card stagger for non-table grids (uses translateY too — looks better on cards) */
+[data-stagger-cards] > * { animation: fade-in-up 0.5s ease-out both; }
+[data-stagger-cards] > *:nth-child(1)  { animation-delay:   0ms; }
+[data-stagger-cards] > *:nth-child(2)  { animation-delay:  60ms; }
+[data-stagger-cards] > *:nth-child(3)  { animation-delay: 120ms; }
+[data-stagger-cards] > *:nth-child(4)  { animation-delay: 180ms; }
+[data-stagger-cards] > *:nth-child(5)  { animation-delay: 240ms; }
+[data-stagger-cards] > *:nth-child(6)  { animation-delay: 300ms; }
+
+/* Smooth row hover lift + pressable button micro-interaction */
+.row-hover-lift     { transition: transform 0.15s ease, background-color 0.15s ease; }
+.row-hover-lift:hover { transform: translateY(-1px); }
+.press-scale        { transition: transform 0.1s ease; }
+.press-scale:active { transform: scale(0.97); }
+
+/* Marquee — used by the landing-page feedbacks scroller */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 50s linear infinite;
+  width: max-content;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee { animation: none; }
+}
+
 /* Hero grid pattern */
 .hero-grid {
   background-image:
     linear-gradient(to right, color-mix(in oklch, var(--border) 80%, transparent) 1px, transparent 1px),
     linear-gradient(to bottom, color-mix(in oklch, var(--border) 80%, transparent) 1px, transparent 1px);
   background-size: 64px 64px;
+}
+
+/* Hide scrollbars cross-browser (Chrome, Edge, Opera, Firefox, Safari) */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Thin scrollbar for sidebars (cross-browser) */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--muted-foreground) 30%, transparent) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklch, var(--muted-foreground) 30%, transparent);
+  border-radius: 9999px;
 }

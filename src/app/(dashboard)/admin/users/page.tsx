@@ -21,34 +21,59 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
-import { AdminNav } from "@/components/layout/admin-nav";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/provider";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import type { AdminUser, AdminUserListResponse, UserRole } from "@/types";
 
 const LIMIT = 25;
 
-const ROLE_OPTIONS: { value: string; label: string }[] = [
-  { value: "",        label: "All Roles"  },
-  { value: "user",    label: "User"       },
-  { value: "admin",   label: "Admin"      },
-  { value: "manager", label: "Manager"    },
-];
-
-const ACTIVE_OPTIONS = [
-  { value: "",      label: "All"      },
-  { value: "true",  label: "Active"   },
-  { value: "false", label: "Inactive" },
-];
-
-function RoleBadge({ role }: { role: UserRole }) {
+function RoleBadge({ role, labels }: { role: UserRole; labels: { admin: string; agent: string; user: string } }) {
   if (role === "admin")
-    return <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-xs gap-1"><ShieldCheck className="w-3 h-3" />Admin</Badge>;
-  if (role === "manager")
-    return <Badge variant="outline" className="border-sky-400/40 text-sky-500 bg-sky-500/5 text-xs">Manager</Badge>;
-  return <Badge variant="outline" className="text-xs text-muted-foreground">User</Badge>;
+    return <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-xs gap-1"><ShieldCheck className="w-3 h-3" />{labels.admin}</Badge>;
+  if (role === "agent")
+    return <Badge variant="outline" className="border-sky-400/40 text-sky-500 bg-sky-500/5 text-xs">{labels.agent}</Badge>;
+  return <Badge variant="outline" className="text-xs text-muted-foreground">{labels.user}</Badge>;
 }
 
 export default function AdminUsersPage() {
+  const t = useT({
+    fr: {
+      title: "Utilisateurs", refresh: "Actualiser",
+      total_one: "utilisateur au total", total_many: "utilisateurs au total",
+      search: "Rechercher par nom ou email…",
+      all_roles: "Tous les rôles", role_user: "Utilisateur", role_admin: "Admin", role_agent: "Agent",
+      all: "Tous", active: "Actif", inactive: "Inactif",
+      clear_filters: "Effacer les filtres", no_users: "Aucun utilisateur trouvé",
+      page: "Page", of: "sur", prev: "Préc.", next: "Suiv.", users_word: "utilisateurs",
+      activate: "Activer", deactivate: "Désactiver", delete_user: "Supprimer l'utilisateur",
+      view_profile: "Voir le profil", confirm_delete: "Supprimer définitivement cet utilisateur ? Cette action est irréversible.",
+      activated: "Utilisateur activé.", deactivated: "Utilisateur désactivé.", deleted: "Utilisateur supprimé.", failed: "Échec.",
+    },
+    en: {
+      title: "Users", refresh: "Refresh",
+      total_one: "user total", total_many: "users total",
+      search: "Search by name or email…",
+      all_roles: "All Roles", role_user: "User", role_admin: "Admin", role_agent: "Agent",
+      all: "All", active: "Active", inactive: "Inactive",
+      clear_filters: "Clear filters", no_users: "No users found",
+      page: "Page", of: "of", prev: "Prev", next: "Next", users_word: "users",
+      activate: "Activate", deactivate: "Deactivate", delete_user: "Delete user",
+      view_profile: "View profile", confirm_delete: "Permanently delete this user? This cannot be undone.",
+      activated: "User activated.", deactivated: "User deactivated.", deleted: "User deleted.", failed: "Failed.",
+    },
+  });
+  const ROLE_OPTIONS = [
+    { value: "",        label: t.all_roles    },
+    { value: "user",    label: t.role_user    },
+    { value: "admin",   label: t.role_admin   },
+    { value: "agent",   label: t.role_agent   },
+  ];
+  const ACTIVE_OPTIONS = [
+    { value: "",      label: t.all      },
+    { value: "true",  label: t.active   },
+    { value: "false", label: t.inactive },
+  ];
   const [users, setUsers]           = useState<AdminUser[]>([]);
   const [total, setTotal]           = useState(0);
   const [page, setPage]             = useState(0);
@@ -94,10 +119,10 @@ export default function AdminUsersPage() {
     setActioning(userId + ":activate");
     try {
       await api.post(`/auth/admin/users/${userId}/activate`);
-      flash(true, "User activated.");
+      flash(true, t.activated);
       fetchUsers();
     } catch (err: unknown) {
-      flash(false, (err as { detail?: string }).detail ?? "Failed.");
+      flash(false, (err as { detail?: string }).detail ?? t.failed);
     } finally {
       setActioning(null);
     }
@@ -107,24 +132,24 @@ export default function AdminUsersPage() {
     setActioning(userId + ":deactivate");
     try {
       await api.post(`/auth/admin/users/${userId}/deactivate`);
-      flash(true, "User deactivated.");
+      flash(true, t.deactivated);
       fetchUsers();
     } catch (err: unknown) {
-      flash(false, (err as { detail?: string }).detail ?? "Failed.");
+      flash(false, (err as { detail?: string }).detail ?? t.failed);
     } finally {
       setActioning(null);
     }
   }
 
   async function deleteUser(userId: string) {
-    if (!confirm("Permanently delete this user? This cannot be undone.")) return;
+    if (!confirm(t.confirm_delete)) return;
     setActioning(userId + ":delete");
     try {
       await api.delete("/auth/admin/users/bulk-delete", { user_ids: [userId] });
-      flash(true, "User deleted.");
+      flash(true, t.deleted);
       fetchUsers();
     } catch (err: unknown) {
-      flash(false, (err as { detail?: string }).detail ?? "Failed.");
+      flash(false, (err as { detail?: string }).detail ?? t.failed);
     } finally {
       setActioning(null);
     }
@@ -134,10 +159,7 @@ export default function AdminUsersPage() {
   const hasFilters = !!(search || roleFilter || activeFilter);
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-400 mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -146,13 +168,13 @@ export default function AdminUsersPage() {
               <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Users className="w-4 h-4 text-primary" />
               </div>
-              <h1 className="text-2xl font-black tracking-tight">Users</h1>
+              <h1 className="text-2xl font-black tracking-tight">{t.title}</h1>
             </div>
-            <p className="text-sm text-muted-foreground">{total.toLocaleString()} user{total !== 1 ? "s" : ""} total</p>
+            <p className="text-sm text-muted-foreground">{total.toLocaleString()} {total !== 1 ? t.total_many : t.total_one}</p>
           </div>
           <Button size="sm" variant="outline" onClick={fetchUsers} disabled={loading} className="gap-1.5">
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCcw className="w-3.5 h-3.5" />}
-            Refresh
+            {t.refresh}
           </Button>
         </div>
 
@@ -173,7 +195,7 @@ export default function AdminUsersPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Search by name or email…"
+              placeholder={t.search}
               className="pl-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -200,7 +222,7 @@ export default function AdminUsersPage() {
             onClick={() => { setSearch(""); setRole(""); setActive(""); setPage(0); }}
             className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
           >
-            Clear filters
+            {t.clear_filters}
           </button>
         )}
 
@@ -223,17 +245,28 @@ export default function AdminUsersPage() {
                     <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />Loading…
                   </td></tr>
                 ) : displayed.length === 0 ? (
-                  <tr><td colSpan={5} className="py-16 text-center text-muted-foreground">No users found</td></tr>
+                  <tr><td colSpan={5} className="py-16 text-center text-muted-foreground">{t.no_users}</td></tr>
                 ) : displayed.map((u) => {
                   const isActioning = actioning?.startsWith(u.id);
                   return (
                     <tr key={u.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
-                        <p className="font-semibold text-sm">{u.name} {u.family_name}</p>
-                        <p className="text-xs text-muted-foreground">{u.email}</p>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <UserAvatar
+                            src={u.avatar_url}
+                            name={u.name}
+                            familyName={u.family_name}
+                            size={32}
+                            className="ring-1 ring-primary/15"
+                          />
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm truncate">{u.name} {u.family_name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell">
-                        <RoleBadge role={u.role} />
+                        <RoleBadge role={u.role} labels={{ admin: t.role_admin, agent: t.role_agent, user: t.role_user }} />
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         <div className="flex flex-col gap-1">
@@ -260,7 +293,7 @@ export default function AdminUsersPage() {
                           <Link
                             href={`/admin/users/${u.id}`}
                             className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                            title="View details"
+                            title={t.view_profile}
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </Link>
@@ -268,7 +301,7 @@ export default function AdminUsersPage() {
                             <button
                               onClick={() => deactivate(u.id)}
                               disabled={isActioning}
-                              title="Deactivate"
+                              title={t.deactivate}
                               className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 transition-colors disabled:opacity-40"
                             >
                               {actioning === u.id + ":deactivate"
@@ -280,7 +313,7 @@ export default function AdminUsersPage() {
                             <button
                               onClick={() => activate(u.id)}
                               disabled={isActioning}
-                              title="Activate"
+                              title={t.activate}
                               className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
                             >
                               {actioning === u.id + ":activate"
@@ -292,7 +325,7 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => deleteUser(u.id)}
                             disabled={isActioning}
-                            title="Delete user"
+                            title={t.delete_user}
                             className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
                           >
                             {actioning === u.id + ":delete"
@@ -312,18 +345,17 @@ export default function AdminUsersPage() {
 
         {totalPages > 1 && (
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">Page {page + 1} of {totalPages} — {total} users</p>
+            <p className="text-xs text-muted-foreground">{t.page} {page + 1} {t.of} {totalPages} — {total} {t.users_word}</p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" disabled={page === 0 || loading} onClick={() => setPage((p) => p - 1)} className="gap-1">
-                <ChevronLeft className="w-3.5 h-3.5" /> Prev
+                <ChevronLeft className="w-3.5 h-3.5" /> {t.prev}
               </Button>
               <Button variant="outline" size="sm" disabled={page >= totalPages - 1 || loading} onClick={() => setPage((p) => p + 1)} className="gap-1">
-                Next <ChevronRight className="w-3.5 h-3.5" />
+                {t.next} <ChevronRight className="w-3.5 h-3.5" />
               </Button>
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

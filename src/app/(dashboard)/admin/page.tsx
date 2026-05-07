@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { AdminNav } from "@/components/layout/admin-nav";
+import { useT } from "@/i18n/provider";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -68,6 +68,11 @@ interface SyncCardProps {
   title: string;
   description: string;
   buttonLabel: string;
+  syncingLabel?: string;
+  runningLabel?: string;
+  completedLabel?: string;
+  failedLabel?: string;
+  lastRunLabel?: string;
   state: SyncState;
   onSync: () => void;
 }
@@ -79,6 +84,11 @@ function SyncCard({
   title,
   description,
   buttonLabel,
+  syncingLabel = "Syncing…",
+  runningLabel = "Running…",
+  completedLabel = "Completed",
+  failedLabel = "Failed",
+  lastRunLabel = "Last run",
   state,
   onSync,
 }: SyncCardProps) {
@@ -100,7 +110,7 @@ function SyncCard({
         </div>
         {state.lastRun && (
           <span className="text-[10px] text-muted-foreground">
-            Last run {state.lastRun.toLocaleTimeString()}
+            {lastRunLabel} {state.lastRun.toLocaleTimeString()}
           </span>
         )}
       </div>
@@ -114,17 +124,17 @@ function SyncCard({
         <div className="mt-4">
           {state.status === "loading" && (
             <Badge variant="outline" className="gap-1.5 text-xs border-muted-foreground/30 text-muted-foreground">
-              <Loader2 className="w-3 h-3 animate-spin" /> Running…
+              <Loader2 className="w-3 h-3 animate-spin" /> {runningLabel}
             </Badge>
           )}
           {state.status === "success" && (
             <Badge variant="outline" className="gap-1.5 text-xs border-primary/40 text-primary bg-primary/5">
-              <CheckCircle2 className="w-3 h-3" /> Completed
+              <CheckCircle2 className="w-3 h-3" /> {completedLabel}
             </Badge>
           )}
           {state.status === "error" && (
             <Badge variant="outline" className="gap-1.5 text-xs border-destructive/40 text-destructive bg-destructive/5">
-              <XCircle className="w-3 h-3" /> Failed
+              <XCircle className="w-3 h-3" /> {failedLabel}
             </Badge>
           )}
         </div>
@@ -153,7 +163,7 @@ function SyncCard({
         variant={state.status === "success" ? "outline" : "default"}
       >
         {isLoading ? (
-          <><Loader2 className="w-4 h-4 animate-spin" /> Syncing…</>
+          <><Loader2 className="w-4 h-4 animate-spin" /> {syncingLabel}</>
         ) : (
           <><RefreshCcw className="w-4 h-4" /> {buttonLabel}</>
         )}
@@ -165,6 +175,40 @@ function SyncCard({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
+  const t = useT({
+    fr: {
+      admin: "Admin", title: "Panneau de contrôle",
+      lead: "Déclencher manuellement la synchronisation des données depuis l'API d'Uber.",
+      syncing: "Synchronisation…", sync_all: "Tout synchroniser",
+      manual_sync: "Synchronisation manuelle", bg_thread: "S'exécute en arrière-plan",
+      stores: "Restaurants", orders: "Commandes", refunds: "Remboursements", users: "Utilisateurs", payments: "Paiements",
+      stores_desc: "Récupère tous les restaurants SmartKitchen depuis l'API Uber, met à jour la base de données et auto-vérifie les restaurants utilisateurs en attente.",
+      orders_desc: "Récupère toutes les commandes annulées et contestées pour chaque restaurant SmartKitchen actif. Les deux types de rapports en un seul appel.",
+      payments_desc: "Déclenche un rapport de détails de paiement pour tous les restaurants actifs. Sauvegarde uniquement les lignes marquées comme remboursements restaurant.",
+      sync_stores: "Synchroniser restaurants", sync_orders: "Synchroniser commandes", sync_payments: "Synchroniser paiements",
+      last_run: "Dernier résumé", completed_at: "Terminé à", completed: "Terminé",
+      failed: "Échec", running: "En cours…", not_run_yet: "Pas encore exécuté",
+      sync_failed_stores: "Échec de la synchronisation des restaurants.",
+      sync_failed_orders: "Échec de la synchronisation des commandes.",
+      sync_failed_payments: "Échec de la synchronisation des paiements.",
+    },
+    en: {
+      admin: "Admin", title: "Control Panel",
+      lead: "Manually trigger data synchronisation from Uber's API.",
+      syncing: "Syncing…", sync_all: "Sync All",
+      manual_sync: "Manual Sync", bg_thread: "Runs in background thread",
+      stores: "Stores", orders: "Orders", refunds: "Refunds", users: "Users", payments: "Payments",
+      stores_desc: "Pull all SmartKitchen stores from Uber's API, upsert into the database, and auto-verify any pending user stores.",
+      orders_desc: "Fetch all cancelled and contested orders for every active SmartKitchen store. Both report types run in one call.",
+      payments_desc: "Trigger a Payment Details Report for all active stores. Saves only rows marked as restaurant refunds.",
+      sync_stores: "Sync Stores", sync_orders: "Sync Orders", sync_payments: "Sync Payments",
+      last_run: "Last Run Summary", completed_at: "Completed at", completed: "Completed",
+      failed: "Failed", running: "Running…", not_run_yet: "Not run yet",
+      sync_failed_stores: "Store sync failed.",
+      sync_failed_orders: "Order sync failed.",
+      sync_failed_payments: "Payment sync failed.",
+    },
+  });
   const [stores,   setStores]   = useState<SyncState>(initialSync);
   const [orders,   setOrders]   = useState<SyncState>(initialSync);
   const [payments, setPayments] = useState<SyncState>(initialSync);
@@ -183,7 +227,7 @@ export default function AdminPage() {
       setStores({
         status: "error",
         result: null,
-        errorMsg: e.detail ?? "Store sync failed.",
+        errorMsg: e.detail ?? t.sync_failed_stores,
         lastRun: new Date(),
       });
     }
@@ -201,7 +245,7 @@ export default function AdminPage() {
       setOrders({
         status: "error",
         result: null,
-        errorMsg: e.detail ?? "Order sync failed.",
+        errorMsg: e.detail ?? t.sync_failed_orders,
         lastRun: new Date(),
       });
     }
@@ -224,7 +268,7 @@ export default function AdminPage() {
       setPayments({
         status: "error",
         result: null,
-        errorMsg: e.detail ?? "Payment sync failed.",
+        errorMsg: e.detail ?? t.sync_failed_payments,
         lastRun: new Date(),
       });
     }
@@ -242,25 +286,18 @@ export default function AdminPage() {
   }
 
   return (
-
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-
-      {/* ── Body ─────────────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+    <div className="max-w-450 mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
 
         {/* Page header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-xs font-semibold">
-                Admin
+                {t.admin}
               </Badge>
             </div>
-            <h1 className="text-3xl font-black tracking-tight">Control Panel</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Manually trigger data synchronisation from Uber's API.
-            </p>
+            <h1 className="text-3xl font-black tracking-tight">{t.title}</h1>
+            <p className="text-muted-foreground mt-1 text-sm">{t.lead}</p>
           </div>
 
           {/* Sync all + quick links */}
@@ -272,17 +309,17 @@ export default function AdminPage() {
               className="gap-1.5 font-semibold shadow-md shadow-primary/20"
             >
               {isAnySyncing
-                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Syncing…</>
-                : <><RefreshCcw className="w-3.5 h-3.5" /> Sync All</>
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t.syncing}</>
+                : <><RefreshCcw className="w-3.5 h-3.5" /> {t.sync_all}</>
               }
             </Button>
           </div>
           <div className="flex flex-wrap gap-2">
             {[
-              { label: "Stores",  href: "/admin/stores",  icon: Store        },
-              { label: "Orders",  href: "/admin/orders",  icon: ShoppingBag  },
-              { label: "Refunds", href: "/admin/refunds", icon: CreditCard   },
-              { label: "Users",   href: "/admin/users",   icon: Users        },
+              { label: t.stores,  href: "/admin/stores",  icon: Store        },
+              { label: t.orders,  href: "/admin/orders",  icon: ShoppingBag  },
+              { label: t.refunds, href: "/admin/refunds", icon: CreditCard   },
+              { label: t.users,   href: "/admin/users",   icon: Users        },
             ].map((l) => (
               <Link key={l.href} href={l.href}>
                 <Button variant="outline" size="sm" className="gap-1.5 text-xs font-medium">
@@ -298,9 +335,9 @@ export default function AdminPage() {
         {/* ── Sync cards ─────────────────────────────────────── */}
         <div>
           <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-lg font-bold">Manual Sync</h2>
+            <h2 className="text-lg font-bold">{t.manual_sync}</h2>
             <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">Runs in background thread</span>
+            <span className="text-xs text-muted-foreground">{t.bg_thread}</span>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -308,9 +345,13 @@ export default function AdminPage() {
               icon={Store}
               iconColor="text-primary"
               iconBg="bg-primary/10"
-              title="Stores"
-              description="Pull all SmartKitchen stores from Uber's API, upsert into the database, and auto-verify any pending user stores."
-              buttonLabel="Sync Stores"
+              title={t.stores}
+              description={t.stores_desc}
+              buttonLabel={t.sync_stores}
+              syncingLabel={t.syncing}
+              runningLabel={t.running}
+              completedLabel={t.completed}
+              failedLabel={t.failed}
               state={stores}
               onSync={syncStores}
             />
@@ -318,9 +359,13 @@ export default function AdminPage() {
               icon={ShoppingBag}
               iconColor="text-sky-500"
               iconBg="bg-sky-500/10"
-              title="Orders"
-              description="Fetch all cancelled and contested orders for every active SmartKitchen store. Both report types run in one call."
-              buttonLabel="Sync Orders"
+              title={t.orders}
+              description={t.orders_desc}
+              buttonLabel={t.sync_orders}
+              syncingLabel={t.syncing}
+              runningLabel={t.running}
+              completedLabel={t.completed}
+              failedLabel={t.failed}
               state={orders}
               onSync={syncOrders}
             />
@@ -328,9 +373,13 @@ export default function AdminPage() {
               icon={CreditCard}
               iconColor="text-violet-500"
               iconBg="bg-violet-500/10"
-              title="Payments"
-              description="Trigger a Payment Details Report for all active stores. Saves only rows marked as restaurant refunds."
-              buttonLabel="Sync Payments"
+              title={t.payments}
+              description={t.payments_desc}
+              buttonLabel={t.sync_payments}
+              syncingLabel={t.syncing}
+              runningLabel={t.running}
+              completedLabel={t.completed}
+              failedLabel={t.failed}
               state={payments}
               onSync={syncPayments}
             />
@@ -341,14 +390,14 @@ export default function AdminPage() {
         {(stores.lastRun || orders.lastRun || payments.lastRun) && (
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-lg font-bold">Last Run Summary</h2>
+              <h2 className="text-lg font-bold">{t.last_run}</h2>
               <div className="flex-1 h-px bg-border" />
             </div>
             <div className="grid sm:grid-cols-3 gap-4">
               {[
-                { label: "Stores",   state: stores   },
-                { label: "Orders",   state: orders   },
-                { label: "Payments", state: payments },
+                { label: t.stores,   state: stores   },
+                { label: t.orders,   state: orders   },
+                { label: t.payments, state: payments },
               ].map(({ label, state }) => (
                 <div
                   key={label}
@@ -372,12 +421,12 @@ export default function AdminPage() {
                     <p className="text-sm font-semibold">{label}</p>
                     <p className="text-xs text-muted-foreground truncate">
                       {state.status === "success" && state.lastRun
-                        ? `Completed at ${state.lastRun.toLocaleTimeString()}`
+                        ? `${t.completed_at} ${state.lastRun.toLocaleTimeString()}`
                         : state.status === "error"
-                        ? state.errorMsg ?? "Failed"
+                        ? state.errorMsg ?? t.failed
                         : state.status === "loading"
-                        ? "Running…"
-                        : "Not run yet"}
+                        ? t.running
+                        : t.not_run_yet}
                     </p>
                   </div>
                   {state.status === "success" && (
@@ -392,6 +441,5 @@ export default function AdminPage() {
           </div>
         )}
       </div>
-    </div>
   );
 }

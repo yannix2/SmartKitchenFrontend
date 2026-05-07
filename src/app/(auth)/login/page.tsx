@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, setTokens } from "@/lib/api";
+import { useT } from "@/i18n/provider";
 import type { LoginResponse } from "@/types";
 
 // ── Form (needs useSearchParams → must be inside Suspense) ───────────────────
@@ -16,6 +17,39 @@ function LoginForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const from         = searchParams.get("from") || "/dashboard";
+
+  const t = useT({
+    fr: {
+      welcome: "Bon retour",
+      sign_into: "Connectez-vous à votre compte SmartKitchen",
+      email: "Email",
+      password: "Mot de passe",
+      forgot: "Mot de passe oublié ?",
+      sign_in: "Se connecter",
+      signing_in: "Connexion…",
+      new_to: "Nouveau sur SmartKitchen ?",
+      create_account: "Créer un compte",
+      err_invalid: "Email ou mot de passe incorrect.",
+      err_inactive: "Votre compte n'est pas vérifié ou a été désactivé.",
+      err_generic: "Une erreur est survenue. Veuillez réessayer.",
+      loading: "Chargement…",
+    },
+    en: {
+      welcome: "Welcome back",
+      sign_into: "Sign in to your SmartKitchen account",
+      email: "Email",
+      password: "Password",
+      forgot: "Forgot password?",
+      sign_in: "Sign In",
+      signing_in: "Signing in…",
+      new_to: "New to SmartKitchen?",
+      create_account: "Create an account",
+      err_invalid: "Incorrect email or password.",
+      err_inactive: "Your account is not verified or has been deactivated.",
+      err_generic: "Something went wrong. Please try again.",
+      loading: "Loading…",
+    },
+  });
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPw, setShowPw]   = useState(false);
@@ -38,12 +72,9 @@ function LoginForm() {
       router.push(from);
     } catch (err: unknown) {
       const e = err as { status?: number };
-      if (e.status === 401)
-        setError("Incorrect email or password.");
-      else if (e.status === 403)
-        setError("Your account is not verified or has been deactivated.");
-      else
-        setError("Something went wrong. Please try again.");
+      if (e.status === 401) setError(t.err_invalid);
+      else if (e.status === 403) setError(t.err_inactive);
+      else setError(t.err_generic);
     } finally {
       setLoading(false);
     }
@@ -53,10 +84,8 @@ function LoginForm() {
     <div className="flex flex-col gap-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-black tracking-tight mb-2">Welcome back</h1>
-        <p className="text-muted-foreground text-sm">
-          Sign in to your SmartKitchen account
-        </p>
+        <h1 className="text-3xl font-black tracking-tight mb-2">{t.welcome}</h1>
+        <p className="text-muted-foreground text-sm">{t.sign_into}</p>
       </div>
 
       {/* Error */}
@@ -70,7 +99,7 @@ function LoginForm() {
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t.email}</Label>
           <Input
             id="email"
             type="email"
@@ -85,12 +114,12 @@ function LoginForm() {
 
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t.password}</Label>
             <Link
               href="/forgot-password"
               className="text-xs text-muted-foreground hover:text-primary transition-colors"
             >
-              Forgot password?
+              {t.forgot}
             </Link>
           </div>
           <div className="relative">
@@ -122,9 +151,9 @@ function LoginForm() {
           className="w-full h-11 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow mt-1"
         >
           {loading ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Signing in…</>
+            <><Loader2 className="w-4 h-4 animate-spin" /> {t.signing_in}</>
           ) : (
-            "Sign In"
+            t.sign_in
           )}
         </Button>
       </form>
@@ -132,13 +161,13 @@ function LoginForm() {
       {/* Divider */}
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-border" />
-        <span className="text-xs text-muted-foreground">New to SmartKitchen?</span>
+        <span className="text-xs text-muted-foreground">{t.new_to}</span>
         <div className="flex-1 h-px bg-border" />
       </div>
 
       <Link href="/register">
         <Button variant="outline" size="lg" className="w-full h-11 font-semibold">
-          Create an account
+          {t.create_account}
         </Button>
       </Link>
     </div>
